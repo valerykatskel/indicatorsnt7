@@ -162,7 +162,23 @@ namespace NinjaTrader.Indicator
         #endregion drawArea
         //=========================================================================================================     
 		
-		
+        //=========================================================================================================     
+        #region clearPattern
+        // Обнуляем паттерн
+        private void clearPattern(){
+			pattern.counter = 0;
+			pattern.startBar = 0;
+			pattern.startImpulseSize = 0;
+			pattern.status = 0;
+			pattern.stopBar = 0;
+			pattern.type = "";
+			pattern.consolidationLow = 1000000;
+			pattern.consolidationHigh = 0;	
+			return;
+        }     
+        #endregion clearPattern
+        //=========================================================================================================		
+				
         /// <summary>
         /// Called on each bar update event (incoming tick)
         /// </summary>
@@ -175,22 +191,6 @@ namespace NinjaTrader.Indicator
 			// если мы уже нашли первый бар и нужно считать бары консолидации
 			if (pattern.status == 1) {
 				if (pattern.counter <= 9) {
-					
-					/*if (
-							(
-								(getBarType(1) == "short")
-								&& (High[0] > High[1])
-							)
-							||
-							(
-								(getBarType(1) == "long")
-								&& (Low[0] < Low[1])
-							)						
-					) {
-						pattern.counter = 5;
-						pattern.status = 0;
-						
-					}*/
 					
 					// проверяем текущий бар можно считать очередным баром в консолидаци?
 					if (
@@ -205,7 +205,7 @@ namespace NinjaTrader.Indicator
 						double tmpCloseImpulseSize = (High[2]-Low[0])/TickSize;
 						
 						//Print (Time[0]+" +1 бар в консолидацию pattern.status=1 start="+pattern.startBar+" stop"+pattern.stopBar+" pattern.counter="+" pattern.startImpulseSize="+pattern.counter+pattern.startImpulseSize+" (High[2]-Low[0])/TickSize)="+tmpCloseImpulseSize+" pattern.startImpulseSize="+pattern.startImpulseSize);
-						Print (Time[0]+" +1 бар в консолидацию pattern.consolidationHigh="+pattern.consolidationHigh+" pattern.consolidationLow"+pattern.consolidationLow);
+						Print (Time[0]+" +1 бар в консолидацию, всего баров="+pattern.counter+" pattern.consolidationHigh="+pattern.consolidationHigh+" pattern.consolidationLow"+pattern.consolidationLow);
                         // обновляем хай и лоу консолидации, если нужно
                         if (priceToInt(pattern.consolidationHigh) < priceToInt(High[0])) pattern.consolidationHigh = High[0];
                         if (priceToInt(pattern.consolidationLow) > priceToInt(Low[0])) pattern.consolidationLow = Low[0];
@@ -222,55 +222,49 @@ namespace NinjaTrader.Indicator
 							pattern.consolidationHigh = findMax(pattern.startBar, pattern.stopBar);
 							pattern.consolidationLow = findMin(pattern.startBar, pattern.stopBar);
 							Print (Time[0]+" арка сформировалась, длина арки="+pattern.counter+" startBar="+pattern.startBar+" stopBar="+pattern.stopBar);
-							DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow-TickSize, pattern.stopBar, pattern.consolidationHigh+TickSize, Color.Yellow, Color.Yellow, 1);
+							DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow-TickSize, pattern.stopBar, pattern.consolidationHigh+TickSize, Color.Red, Color.Red, 2);
 				
 							// обнуляем после формирования арки
-							pattern.counter = 0;
-							pattern.startBar = 0;
-							pattern.startImpulseSize = 0;
-							pattern.status = 0;
-							pattern.stopBar = 0;
-							pattern.type = "";
-							pattern.consolidationLow = 1000000;
-							pattern.consolidationHigh = 0;
+							clearPattern();
 						}
 
 						
 					} else {
-						// текущий бар соответствует требованиям бара в консолидации
+						// текущий бар НЕ соответствует требованиям бара в консолидации
 						
 						// проверим, это просто патерн уже не получится сформировать ИЛИ появился импульсный закрывающий бар и паттерн сформирован и консолидация найдена?
-						
+						Print (Time[0]+" бар не подходит для консолидации getBarSize(0)="+getBarSize(0)+" pattern.startImpulseSize="+pattern.startImpulseSize+" getBarType(0)="+getBarType(0)+" pattern.type="+pattern.type);
 						if (priceToInt(getBarSize(0)) > (priceToInt(getBarSize(1))*2)) {
 							// если у нас есть закрывающий импульсный бар, то проверяем, есть необходимое количество баров в консолидации, минимум 2 бара
 							// и также проверим, чтобы направление закрывающего импульсного бара было противоположным направлению открывающего импульсного бара
-							if ((getBarType(0) != pattern.type) && (getBarType(0) != "short-doji") && (getBarType(0) != "long-doji")) {
+							
+							if (getBarType(0) == pattern.type) {
 								// итак, у нас очередной бар консолидации оказался больше в два или больше раз, чем предыдущий бар консолидации и он противоположного направления
 								// если сравнивать направление с направлением открывающего импульсного бара. 
 								
-								// !!!АРКА СФОРМИРОВАЛАСЬ!!!!
-								pattern.stopBar = 1;
-								Print (Time[0]+" арка сформировалась, длина арки="+pattern.counter+" startBar="+pattern.startBar+" stopBar="+pattern.stopBar);
-								DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar+1, Low[pattern.startBar]-TickSize, pattern.stopBar-1, High[pattern.stopBar]+TickSize, Color.Yellow, Color.Yellow, 1);
-								
-								// обнуляем после формирования арки
-								pattern.counter = 0;
-								pattern.startBar = 0;
-								pattern.startImpulseSize = 0;
-								pattern.status = 0;
-								pattern.stopBar = 0;
-								pattern.type = "";
-							pattern.consolidationLow = 1000000;
-							pattern.consolidationHigh = 0;
+								Print (Time[0]+" текущий бар импульсный закрывающий pattern.type="+pattern.type+" getBarType(0)="+getBarType(0)+ " getBarSize(0)="+ getBarSize(0));
+								if (pattern.counter >=2) {
+									// !!!АРКА СФОРМИРОВАЛАСЬ!!!!
+									pattern.stopBar = 1;
+									Print (Time[0]+" арка сформировалась, длина арки="+pattern.counter+" startBar="+pattern.startBar+" stopBar="+pattern.stopBar);
+									DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar+1, Low[pattern.startBar]-TickSize, pattern.stopBar-1, High[pattern.stopBar]+TickSize, Color.Red, Color.Red, 2);
+									// обнуляем после формирования арки
+									clearPattern();
+								} else {
+									Print (Time[0]+"!!! арка сформировалась, НО длина арки="+pattern.counter+" startBar="+pattern.startBar+" stopBar="+pattern.stopBar);
+									DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar+1, Low[pattern.startBar]-TickSize, pattern.stopBar, High[pattern.stopBar+1]+TickSize, Color.Red, Color.Red, 2);
+									// обнуляем после формирования арки
+									clearPattern();
+								}
 							}
+						} else {
+							Print (Time[0]+" бар не подходит для консолидации, паттерн не сформирован");
+							clearPattern();
 						}
 					}; 
 				} else {
 					// если баров консолидаци больше 5, то паттерн считаем не сформированным, и выставляем статус паттерна в 0
-					pattern.counter = 5;
-					pattern.status = 0;
-					pattern.startBar = 0;
-					pattern.stopBar = 0;
+					clearPattern();
 					Print (Time[0]+" за 10 баров паттерн не сформировался");
 				}
 			}
@@ -287,7 +281,7 @@ namespace NinjaTrader.Indicator
 						//&& (priceToInt(getBarSize(1)) > (priceToInt(getBarSize(2))*2))
 						//&& (getBarSize(0) > 10) 
 				){
-					Print (Time[0]+" pattern.status=1 первый бар консолидации="+getBarSize(0)+" импульсный бар="+getBarSize(1)+" бар перед импульсным="+getBarSize(2));
+					Print (Time[0]+" pattern.status=1 импульсный бар="+getBarSize(1)+ " первый бар консолидации="+getBarSize(0)+" начинаем считать бары");
 					pattern.status = 1;
 					pattern.startBar = 1;
 					pattern.counter = 1;
@@ -297,11 +291,11 @@ namespace NinjaTrader.Indicator
 					
 					
 					//drawArea(pattern.startBar, pattern.stopBar, "myConsolidation", 2);
-					if (Open[0] > Close[0]) {
+					if (Open[1] < Close[1]) {
 						pattern.type = "short";
 					}
 					
-					if (Open[0] > Close[0]) {
+					if (Open[1] > Close[1]) {
 						pattern.type = "long";
 					}
 				}
