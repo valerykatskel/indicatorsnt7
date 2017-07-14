@@ -232,240 +232,282 @@ namespace NinjaTrader.Indicator
             //Plot0.Set(Close[0]);
 			if ((CurrentBars[0] < BarsRequired) || (CurrentBars[0] < BarsRequired)) return;
 			
-			// если мы уже нашли первый бар и нужно считать бары консолидации
-			if (pattern.status == 1) {
-				if (pattern.counter <= 9) {
-					
-					// проверяем текущий бар можно считать очередным баром в консолидаци?
-					// чтобы бар считать очередным баром в консолидации он должен быть
-					// в ШОРТ
-					// 1) лой свечи не должен заходить в нижнюю треть стартового импульсного бара, как тут  http://joxi.ru/YmEgNpI035jqA6
-					// 2) лой свечи не должен быть выше хая стартового импульсного бара как тут http://joxi.ru/J2bx3XuXozvlr6
-					// в ЛОНГ аналогично
-					if (
-						//((priceToInt(getBarSize(0))) <= (priceToInt(pattern.startImpulseSize*0.65)))
-						// шорт
-						(
-							//(getBarType(pattern.startBar+1) == "bullish")														
-							pattern.type == "short"
-							&& (priceToInt(Low[0]) >= priceToInt(pattern.startImpulseLow + (pattern.startImpulseSize/3)*TickSize))
-							&& (priceToInt(Low[0]) <= priceToInt(pattern.startImpulseHigh))
-						)
-						||
-						// лонг
-						(
-							//(getBarType(pattern.startBar+1) == "bearish")														
-							pattern.type == "long"
-							&& (priceToInt(High[0]) <= priceToInt(pattern.startImpulseHigh - (pattern.startImpulseSize/3)*TickSize))
-							&& (priceToInt(High[0]) >= priceToInt(pattern.startImpulseLow))
-						)
-					) {
-						// текущий бар соответствует требованиям бара в консолидации, считаем бары консолидации дальше
-						//drawArea(pattern.startBar, pattern.stopBar, "myConsolidation", 2);
-						pattern.startBar += 1;
-                        pattern.stopBar = 0;
-						pattern.counter += 1;
+			if (FirstTickOfBar) {
+				// если мы уже нашли первый бар и нужно считать бары консолидации
+				if (pattern.status == 1) {
+					if (pattern.counter <= 9) {
 						
-						double tmpCloseImpulseSize = (High[2]-Low[0])/TickSize;
-						
-						//Print (Time[0]+" +1 бар в консолидацию pattern.status=1 start="+pattern.startBar+" stop"+pattern.stopBar+" pattern.counter="+" pattern.startImpulseSize="+pattern.counter+pattern.startImpulseSize+" (High[2]-Low[0])/TickSize)="+tmpCloseImpulseSize+" pattern.startImpulseSize="+pattern.startImpulseSize);
-						
-                        // обновляем хай и лоу консолидации, если нужно
-                        if (priceToInt(pattern.consolidationHigh) < priceToInt(High[0])) pattern.consolidationHigh = High[0];
-                        if (priceToInt(pattern.consolidationLow) > priceToInt(Low[0])) pattern.consolidationLow = Low[0];
-						Print (Time[0]+" +1 бар в консолидацию, всего баров="+pattern.counter+" pattern.consolidationHigh="+pattern.consolidationHigh+" pattern.consolidationLow"+pattern.consolidationLow);
-						
-						
-						// дальше нужно проверить, может быть консолидация закрывается не одним импульсным баром, а несколькими, как тут, например http://joxi.ru/L215RJC8LVLZ2X
-						// проверим, если 
-						// для ШОРТА
-						// 1) расстояние, которое прошли три бара равно или больше размеру импульсного бара, 
-						// 2) лой третьего проверяемого бара ниже лоя стартового импульсного бара,
-						// то тоже будем считать, что консолидация найдена
-						// причем, pattern.counter должен быть не меньше 5 (3 это закрывающие несколько баров и минимум 2 для самой консолидации)
-						// для ЛОНГов аналогично
-						
+						// проверяем текущий бар можно считать очередным баром в консолидаци?
+						// чтобы бар считать очередным баром в консолидации он должен быть
+						// в ШОРТ
+						// 1) лой свечи не должен заходить в нижнюю треть стартового импульсного бара, как тут  http://joxi.ru/YmEgNpI035jqA6
+						// 2) лой свечи не должен быть выше хая стартового импульсного бара как тут http://joxi.ru/J2bx3XuXozvlr6
+						// в ЛОНГ аналогично
 						if (
+							//((priceToInt(getBarSize(0))) <= (priceToInt(pattern.startImpulseSize*0.65)))
 							// шорт
 							(
-								//(getBarType(pattern.startBar+1) == "bullish")
+								//(getBarType(pattern.startBar+1) == "bullish")														
 								pattern.type == "short"
-								&& (pattern.startImpulseSize <= (Convert.ToInt32((High[2]-Low[0])/TickSize))) 	// 1)
-								&& (priceToInt(Low[0]) < priceToInt(pattern.startImpulseLow))					// 2)
-								&& pattern.counter >=5
+								&& (priceToInt(Low[0]) >= priceToInt(pattern.startImpulseLow + (pattern.startImpulseSize/3)*TickSize))
+								&& (priceToInt(Low[0]) <= priceToInt(pattern.startImpulseHigh))
 							)
 							||
 							// лонг
 							(
-								//(getBarType(pattern.startBar+1) == "bearish")
-								(pattern.type == "long")
-								&& (pattern.startImpulseSize <= (Convert.ToInt32((High[0]-Low[2])/TickSize))) 	// 1)
-								&& (priceToInt(High[0]) > priceToInt(pattern.startImpulseHigh))					// 2)
-								&& pattern.counter >=5
+								//(getBarType(pattern.startBar+1) == "bearish")														
+								pattern.type == "long"
+								&& (priceToInt(High[0]) <= priceToInt(pattern.startImpulseHigh - (pattern.startImpulseSize/3)*TickSize))
+								//&& (priceToInt(High[0]) >= priceToInt(pattern.startImpulseLow))
 							)
-						){
-							// !!!АРКА СФОРМИРОВАЛАСЬ!!!!
-							// закрытие несколькими барами
-							pattern.stopBar = 3;
-							pattern.startBar -= 1;
-							pattern.counter -= 3;
-							pattern.consolidationHigh = findMax(pattern.startBar, pattern.stopBar);
-							pattern.consolidationLow = findMin(pattern.startBar, pattern.stopBar);
-							Print (Time[0]+" арка сформировалась, длина арки="+pattern.counter+" startBar="+pattern.startBar+" stopBar="+pattern.stopBar+" [закрытие несколькими барами]");
-							if (pattern.type == "short") {
-								DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow-TickSize, pattern.stopBar, pattern.consolidationHigh+TickSize, Color.Red, Color.Red, 2);
-							}
-							if (pattern.type == "long") {
-								DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow-TickSize, pattern.stopBar, pattern.consolidationHigh+TickSize, Color.Green, Color.Green, 2);
-							}
-							
-							// обнуляем после формирования арки
-							clearPattern();
-						}	
-						
-						
-						
-						// также нужно проверить, может быть в ходе поиска очередного бара консолидации появится новый стартовый импульсный бар?
-						if (
-						((priceToInt(getBarSize(0))) <= (priceToInt(getBarSize(1)*0.65)))
-						//&& (priceToInt(getBarSize(1)) > (priceToInt(getBarSize(2))*2))
-						//&& (getBarSize(0) > 10) 
-						){
-							Print (Time[0]+" pattern.status=1 импульсный бар="+getBarSize(1)+ " первый бар консолидации="+getBarSize(0)+" начинаем считать бары");
-							pattern.status = 1;
-							pattern.startBar = 1;
-							pattern.counter = 1;
-							pattern.startImpulseSize = getBarSize(1);
-							pattern.startImpulseHigh = High[1];
-							pattern.startImpulseLow = Low[1];
-							pattern.consolidationHigh = High[0];
-							pattern.consolidationLow = Low[0];
-							
-							
-							//drawArea(pattern.startBar, pattern.stopBar, "myConsolidation", 2);
-							if (Open[1] < Close[1]) {
-								pattern.type = "short";
-							}
-							
-							if (Open[1] > Close[1]) {
-								pattern.type = "long";
-							}
-						}
-					} else {
-						// текущий бар НЕ соответствует требованиям бара в консолидации
-						
-						// проверим, это просто патерн уже не получится сформировать ИЛИ появился импульсный закрывающий бар и паттерн сформирован и консолидация найдена?
-						//Print (Time[0]+" бар не подходит для консолидации getBarSize(0)="+getBarSize(0)+" pattern.startImpulseSize="+pattern.startImpulseSize+" getBarType(0)="+getBarType(0)+" pattern.type="+pattern.type);
-					
-						if (
-								(priceToInt(getBarSize(0)*2) > (priceToInt(getBarSize(1))))
 						) {
-							// если у нас есть закрывающий импульсный бар, то проверяем, есть необходимое количество баров в консолидации, минимум 2 бара
-							// и также проверим, чтобы направление закрывающего импульсного бара было противоположным направлению открывающего импульсного бара
+							// текущий бар соответствует требованиям бара в консолидации, считаем бары консолидации дальше
+							// но сначала проверим, если ATRfactor зашкаливает, значит считаем это завершающей свечей импульсной
 							
-							if (
-								(getBarType(0) == pattern.type)
-								/*&& (
+							// считаем ATRfactorStop
+							pattern.ATRfactorStop = Math.Abs((ATRToInt(ATR(14)[0]) - ATRToInt(ATR(14)[1]))) / ( (Math.Abs((ATRToInt(ATR(14)[1]) - ATRToInt(ATR(14)[2]))) > 0) ? (Math.Abs((ATRToInt(ATR(14)[1]) - ATRToInt(ATR(14)[2])))) : 1 );
+							
+							if (	
+								(pattern.ATRfactorStop > 2)
+								&& (pattern.type == getBarType(0))
+							) {
+							
+								// !!!АРКА СФОРМИРОВАЛАСЬ!!!! 
+								// ЗАКРЫТИЕ ИМПУЛЬСНЫМ БАРОМ
+								// осталось проверить условие по ATR
+								pattern.stopBar = 1;
+								
+								// считаем ATRfactorStart
+								pattern.ATRfactorStart = Math.Abs((ATRToInt(ATR(14)[pattern.startBar+1]) - ATRToInt(ATR(14)[pattern.startBar+2]))) / ( (Math.Abs((ATRToInt(ATR(14)[pattern.startBar+2]) - ATRToInt(ATR(14)[pattern.startBar+3]))) > 0) ? (Math.Abs((ATRToInt(ATR(14)[pattern.startBar+2]) - ATRToInt(ATR(14)[pattern.startBar+3])))) : 1  );
+								
+								//if (pattern.ATRfactorStart >= 2 && pattern.ATRfactorStop >= 2) {
+								
+									Print (Time[0]+" арка сформировалась, длина арки="+pattern.counter+" ATRfactorStart="+pattern.ATRfactorStart+" ATRfactorStop="+pattern.ATRfactorStop+" startBar="+pattern.startBar+" stopBar="+pattern.stopBar +" [закрытие импульсным баром]");
+									if (pattern.type == "short") {
+										DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow, pattern.stopBar, pattern.consolidationHigh, Color.Red, Color.Red, 2);
+									}
+									
+									if (pattern.type == "long") {
+										DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow, pattern.stopBar, pattern.consolidationHigh, Color.Green, Color.Green, 2);
+									} 
+								/*} else {
+									Print (Time[0]+" арка сформировалась, но ATRfactor не достаточные"+" ATRfactorStart="+pattern.ATRfactorStart+" ATRfactorStop="+pattern.ATRfactorStop);
+								}*/
+								// обнуляем после формирования арки
+								clearPattern();	
+								
+								
+							} else {
+							
+								
+								//drawArea(pattern.startBar, pattern.stopBar, "myConsolidation", 2);
+								pattern.startBar += 1;
+								pattern.stopBar = 0;
+								pattern.counter += 1;
+								
+								double tmpCloseImpulseSize = (High[2]-Low[0])/TickSize;
+								
+								//Print (Time[0]+" +1 бар в консолидацию pattern.status=1 start="+pattern.startBar+" stop"+pattern.stopBar+" pattern.counter="+" pattern.startImpulseSize="+pattern.counter+pattern.startImpulseSize+" (High[2]-Low[0])/TickSize)="+tmpCloseImpulseSize+" pattern.startImpulseSize="+pattern.startImpulseSize);
+								
+								// обновляем хай и лоу консолидации, если нужно
+								if (priceToInt(pattern.consolidationHigh) < priceToInt(High[0])) pattern.consolidationHigh = High[0];
+								if (priceToInt(pattern.consolidationLow) > priceToInt(Low[0])) pattern.consolidationLow = Low[0];
+								Print (Time[0]+" +1 бар в консолидацию, всего баров="+pattern.counter+" pattern.consolidationHigh="+pattern.consolidationHigh+" pattern.consolidationLow"+pattern.consolidationLow);
+								
+								
+								// дальше нужно проверить, может быть консолидация закрывается не одним импульсным баром, а несколькими, как тут, например http://joxi.ru/L215RJC8LVLZ2X
+								// проверим, если 
+								// для ШОРТА
+								// 1) расстояние, которое прошли три бара равно или больше размеру импульсного бара, 
+								// 2) лой третьего проверяемого бара ниже лоя стартового импульсного бара,
+								// то тоже будем считать, что консолидация найдена
+								// причем, pattern.counter должен быть не меньше 5 (3 это закрывающие несколько баров и минимум 2 для самой консолидации)
+								// для ЛОНГов аналогично
+								
+								if (
+									// шорт
 									(
-										(pattern.type == "long")
-										&& (priceToInt(Low[0]) < priceToInt(pattern.startImpulseHigh))
+										//(getBarType(pattern.startBar+1) == "bullish")
+										pattern.type == "short"
+										&& (pattern.startImpulseSize <= (Convert.ToInt32((High[2]-Low[0])/TickSize))) 	// 1)
+										&& (priceToInt(Low[0]) < priceToInt(pattern.startImpulseLow))					// 2)
+										&& pattern.counter >=5
 									)
 									||
+									// лонг
 									(
-										(pattern.type == "short")
-										&& (priceToInt(High[0]) > priceToInt(pattern.startImpulseLow))
+										//(getBarType(pattern.startBar+1) == "bearish")
+										(pattern.type == "long")
+										&& (pattern.startImpulseSize <= (Convert.ToInt32((High[0]-Low[2])/TickSize))) 	// 1)
+										&& (priceToInt(High[0]) > priceToInt(pattern.startImpulseHigh))					// 2)
+										&& pattern.counter >=5
 									)
-								)*/
-							) {
-								// итак, у нас очередной бар консолидации оказался больше в два или больше раз, чем предыдущий бар консолидации и он противоположного направления
-								// если сравнивать направление с направлением открывающего импульсного бара. 
-								
-								Print (Time[0]+" текущий бар импульсный закрывающий pattern.type="+pattern.type+" getBarType(0)="+getBarType(0)+ " getBarSize(0)="+ getBarSize(0));
-								if (pattern.counter >=2) {
-									
-									// !!!АРКА СФОРМИРОВАЛАСЬ!!!! 
-									// ЗАКРЫТИЕ ИМПУЛЬСНЫМ БАРОМ
-									// осталось проверить условие по ATR
-									pattern.stopBar = 1;
-									
-									// считаем ATRfactorStart
-									pattern.ATRfactorStart = Math.Abs((ATRToInt(ATR(14)[pattern.startBar+1]) - ATRToInt(ATR(14)[pattern.startBar+2]))) / ( (Math.Abs((ATRToInt(ATR(14)[pattern.startBar+2]) - ATRToInt(ATR(14)[pattern.startBar+3]))) > 0) ? (Math.Abs((ATRToInt(ATR(14)[pattern.startBar+2]) - ATRToInt(ATR(14)[pattern.startBar+3])))) : 1  );
-									// считаем ATRfactorStop
-									pattern.ATRfactorStop = Math.Abs((ATRToInt(ATR(14)[0]) - ATRToInt(ATR(14)[1]))) / ( (Math.Abs((ATRToInt(ATR(14)[1]) - ATRToInt(ATR(14)[2]))) > 0) ? (Math.Abs((ATRToInt(ATR(14)[1]) - ATRToInt(ATR(14)[2])))) : 1 );
-						
-									if (pattern.ATRfactorStart >= 2 && pattern.ATRfactorStop >= 2) {
-									
-										Print (Time[0]+" арка сформировалась, длина арки="+pattern.counter+" ATRfactorStart="+pattern.ATRfactorStart+" ATRfactorStop="+pattern.ATRfactorStop+" startBar="+pattern.startBar+" stopBar="+pattern.stopBar +" [закрытие импульсным баром]");
-										if (pattern.type == "short") {
-											DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow, pattern.stopBar, pattern.consolidationHigh, Color.Red, Color.Red, 2);
-										}
-										
-										if (pattern.type == "long") {
-											DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow, pattern.stopBar, pattern.consolidationHigh, Color.Green, Color.Green, 2);
-										} 
-									} else {
-										Print (Time[0]+" арка сформировалась, но ATRfactor не достаточные");
-									}
-									// обнуляем после формирования арки
-									clearPattern();
-									
-								} else if (pattern.counter == 1){
-									//Print (Time[0]+"!!! арка сформировалась, НО длина арки=1 startBar="+pattern.startBar+" stopBar="+pattern.stopBar);
-									/*if (pattern.type == "short") {
-										DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar+1, Low[pattern.startBar], pattern.stopBar, High[pattern.stopBar+1], Color.Red, Color.Red, 2);
+								){
+									// !!!АРКА СФОРМИРОВАЛАСЬ!!!!
+									// закрытие несколькими барами
+									pattern.stopBar = 3;
+									pattern.startBar -= 1;
+									pattern.counter -= 3;
+									pattern.consolidationHigh = findMax(pattern.startBar, pattern.stopBar);
+									pattern.consolidationLow = findMin(pattern.startBar, pattern.stopBar);
+									Print (Time[0]+" арка сформировалась, длина арки="+pattern.counter+" startBar="+pattern.startBar+" stopBar="+pattern.stopBar+" [закрытие несколькими барами]");
+									if (pattern.type == "short") {
+										DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow-TickSize, pattern.stopBar, pattern.consolidationHigh+TickSize, Color.Red, Color.Red, 2);
 									}
 									if (pattern.type == "long") {
-										DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar+1, Low[pattern.startBar], pattern.stopBar, High[pattern.stopBar+1], Color.Green, Color.Green, 2);
-									}*/
+										DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow-TickSize, pattern.stopBar, pattern.consolidationHigh+TickSize, Color.Green, Color.Green, 2);
+									}
+									
 									// обнуляем после формирования арки
+									clearPattern();
+								}	
+								
+								
+								
+								// также нужно проверить, может быть в ходе поиска очередного бара консолидации появится новый стартовый импульсный бар?
+								// причем размер нового импульсного бара должен быть больше чем размер текущего стартового импульсного бара
+								if (
+								((priceToInt(getBarSize(0))) <= (priceToInt(getBarSize(1)*0.8)))
+								//&& (priceToInt(getBarSize(1)) > (priceToInt(getBarSize(2))*2))
+								&& (getBarSize(0) > pattern.startImpulseSize) 
+								){
+									Print (Time[0]+" pattern.status=1 импульсный бар="+getBarSize(1)+ " первый бар консолидации="+getBarSize(0)+" начинаем считать бары");
+									pattern.status = 1;
+									pattern.startBar = 1;
+									pattern.counter = 1;
+									pattern.startImpulseSize = getBarSize(1);
+									pattern.startImpulseHigh = High[1];
+									pattern.startImpulseLow = Low[1];
+									pattern.consolidationHigh = High[0];
+									pattern.consolidationLow = Low[0];
+									
+									
+									//drawArea(pattern.startBar, pattern.stopBar, "myConsolidation", 2);
+									if (Open[1] < Close[1]) {
+										pattern.type = "short";
+									}
+									
+									if (Open[1] > Close[1]) {
+										pattern.type = "long";
+									}
+								}
+							}
+						} else {
+							// текущий бар НЕ соответствует требованиям бара в консолидации
+							
+							// проверим, это просто патерн уже не получится сформировать ИЛИ появился импульсный закрывающий бар и паттерн сформирован и консолидация найдена?
+							//Print (Time[0]+" бар не подходит для консолидации getBarSize(0)="+getBarSize(0)+" pattern.startImpulseSize="+pattern.startImpulseSize+" getBarType(0)="+getBarType(0)+" pattern.type="+pattern.type);
+						
+							if (
+									(priceToInt(getBarSize(0)*2) > (priceToInt(getBarSize(1))))
+							) {
+								// если у нас есть закрывающий импульсный бар, то проверяем, есть необходимое количество баров в консолидации, минимум 2 бара
+								// и также проверим, чтобы направление закрывающего импульсного бара было противоположным направлению открывающего импульсного бара
+								
+								if (
+									(getBarType(0) == pattern.type)
+									/*&& (
+										(
+											(pattern.type == "long")
+											&& (priceToInt(Low[0]) < priceToInt(pattern.startImpulseHigh))
+										)
+										||
+										(
+											(pattern.type == "short")
+											&& (priceToInt(High[0]) > priceToInt(pattern.startImpulseLow))
+										)
+									)*/
+								) {
+									// итак, у нас очередной бар консолидации оказался больше в два или больше раз, чем предыдущий бар консолидации и он противоположного направления
+									// если сравнивать направление с направлением открывающего импульсного бара. 
+									
+									Print (Time[0]+" текущий бар импульсный закрывающий pattern.type="+pattern.type+" getBarType(0)="+getBarType(0)+ " getBarSize(0)="+ getBarSize(0));
+									if (pattern.counter >=2) {
+										
+										// !!!АРКА СФОРМИРОВАЛАСЬ!!!! 
+										// ЗАКРЫТИЕ ИМПУЛЬСНЫМ БАРОМ
+										// осталось проверить условие по ATR
+										pattern.stopBar = 1;
+										
+										// считаем ATRfactorStart
+										pattern.ATRfactorStart = Math.Abs((ATRToInt(ATR(14)[pattern.startBar+1]) - ATRToInt(ATR(14)[pattern.startBar+2]))) / ( (Math.Abs((ATRToInt(ATR(14)[pattern.startBar+2]) - ATRToInt(ATR(14)[pattern.startBar+3]))) > 0) ? (Math.Abs((ATRToInt(ATR(14)[pattern.startBar+2]) - ATRToInt(ATR(14)[pattern.startBar+3])))) : 1  );
+										// считаем ATRfactorStop
+										pattern.ATRfactorStop = Math.Abs((ATRToInt(ATR(14)[0]) - ATRToInt(ATR(14)[1]))) / ( (Math.Abs((ATRToInt(ATR(14)[1]) - ATRToInt(ATR(14)[2]))) > 0) ? (Math.Abs((ATRToInt(ATR(14)[1]) - ATRToInt(ATR(14)[2])))) : 1 );
+							
+										//if (pattern.ATRfactorStart >= 2 && pattern.ATRfactorStop >= 2) {
+										
+											Print (Time[0]+" арка сформировалась, длина арки="+pattern.counter+" ATRfactorStart="+pattern.ATRfactorStart+" ATRfactorStop="+pattern.ATRfactorStop+" startBar="+pattern.startBar+" stopBar="+pattern.stopBar +" [закрытие импульсным баром]");
+											if (pattern.type == "short") {
+												DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow, pattern.stopBar, pattern.consolidationHigh, Color.Red, Color.Red, 2);
+											}
+											
+											if (pattern.type == "long") {
+												DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar, pattern.consolidationLow, pattern.stopBar, pattern.consolidationHigh, Color.Green, Color.Green, 2);
+											} 
+										/*} else {
+											Print (Time[0]+" арка сформировалась, но ATRfactor не достаточные"+" ATRfactorStart="+pattern.ATRfactorStart+" ATRfactorStop="+pattern.ATRfactorStop);
+										}*/
+										// обнуляем после формирования арки
+										clearPattern();
+										
+									} else if (pattern.counter == 1){
+										//Print (Time[0]+"!!! арка сформировалась, НО длина арки=1 startBar="+pattern.startBar+" stopBar="+pattern.stopBar);
+										/*if (pattern.type == "short") {
+											DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar+1, Low[pattern.startBar], pattern.stopBar, High[pattern.stopBar+1], Color.Red, Color.Red, 2);
+										}
+										if (pattern.type == "long") {
+											DrawRectangle("area-"+Time[0]+"__cRange", false, pattern.startBar+1, Low[pattern.startBar], pattern.stopBar, High[pattern.stopBar+1], Color.Green, Color.Green, 2);
+										}*/
+										// обнуляем после формирования арки
+										clearPattern();
+									}
+								} else {
+									Print (Time[0]+" бар не подходит для консолидации");
 									clearPattern();
 								}
 							} else {
-								Print (Time[0]+" бар не подходит для консолидации");
+								Print (Time[0]+" бар не подходит для консолидации, паттерн не сформирован");
 								clearPattern();
 							}
-						} else {
-							Print (Time[0]+" бар не подходит для консолидации, паттерн не сформирован");
-							clearPattern();
-						}
-					}; 
-				} else {
-					// если баров консолидаци больше 5, то паттерн считаем не сформированным, и выставляем статус паттерна в 0
-					clearPattern();
-					Print (Time[0]+" за 10 баров паттерн не сформировался");
-				}
-			}
-			
-			// если мы находимся в поиске бара, с которого начнется консолидация
-			if (pattern.status == 0) {
-				//Print (Time[0]+" pattern.status=0");
-				// если пред предыдущий бар больше предыдущего в 2 и более раз, то ничего не делаем
-				//if (priceToInt(getBarSize(1)) > (priceToInt(getBarSize(2))*2)) return; 
-				
-				// если найден бар начала консолидации, т.е. мы обрабатываем нулевой бар, как на рисунке http://joxi.ru/brRgYnIJ38nQm1
-				if (
-						((priceToInt(getBarSize(0))) <= (priceToInt(getBarSize(1)*0.65)))
-						//&& (priceToInt(getBarSize(1)) > (priceToInt(getBarSize(2))*2))
-						//&& (getBarSize(0) > 10) 
-				){
-					Print (Time[0]+" pattern.status=1 импульсный бар="+getBarSize(1)+ " первый бар консолидации="+getBarSize(0)+" начинаем считать бары");
-					pattern.status = 1;
-					pattern.startBar = 1;
-					pattern.counter = 1;
-					pattern.startImpulseSize = getBarSize(1);
-					pattern.startImpulseHigh = High[1];
-					pattern.startImpulseLow = Low[1];
-					pattern.consolidationHigh = High[0];
-					pattern.consolidationLow = Low[0];
-					
-					
-					//drawArea(pattern.startBar, pattern.stopBar, "myConsolidation", 2);
-					if (Open[1] < Close[1]) {
-						pattern.type = "short";
+						}; 
+					} else {
+						// если баров консолидаци больше 5, то паттерн считаем не сформированным, и выставляем статус паттерна в 0
+						clearPattern();
+						Print (Time[0]+" за 10 баров паттерн не сформировался");
 					}
+				}
+				
+				// если мы находимся в поиске бара, с которого начнется консолидация
+				if (pattern.status == 0) {
+					//Print (Time[0]+" pattern.status=0");
+					// если пред предыдущий бар больше предыдущего в 2 и более раз, то ничего не делаем
+					//if (priceToInt(getBarSize(1)) > (priceToInt(getBarSize(2))*2)) return; 
 					
-					if (Open[1] > Close[1]) {
-						pattern.type = "long";
+					// если найден бар начала консолидации, т.е. мы обрабатываем нулевой бар, как на рисунке http://joxi.ru/brRgYnIJ38nQm1
+					if (
+							((priceToInt(getBarSize(0))) <= (priceToInt(getBarSize(1)*0.8)))
+							//&& (priceToInt(getBarSize(1)) > (priceToInt(getBarSize(2))*2))
+							//&& (getBarSize(0) > 10) 
+					){
+						Print (Time[0]+" pattern.status=1 импульсный бар="+getBarSize(1)+ " первый бар консолидации="+getBarSize(0)+" начинаем считать бары");
+						pattern.status = 1;
+						pattern.startBar = 1;
+						pattern.counter = 1;
+						pattern.startImpulseSize = getBarSize(1);
+						pattern.startImpulseHigh = High[1];
+						pattern.startImpulseLow = Low[1];
+						pattern.consolidationHigh = High[0];
+						pattern.consolidationLow = Low[0];
+						
+						
+						//drawArea(pattern.startBar, pattern.stopBar, "myConsolidation", 2);
+						if (Open[1] < Close[1]) {
+							pattern.type = "short";
+						}
+						
+						if (Open[1] > Close[1]) {
+							pattern.type = "long";
+						}
 					}
 				}
 			}
@@ -525,7 +567,7 @@ namespace NinjaTrader.Indicator
         private static handlarConsolidations checkhandlarConsolidations = new handlarConsolidations();
 
         /// <summary>
-        /// Find a handlarConsolidations
+        /// Find the consolidations
         /// </summary>
         /// <returns></returns>
         public handlarConsolidations handlarConsolidations(bool myBool, double myDouble, int myInt, string myString)
@@ -534,7 +576,7 @@ namespace NinjaTrader.Indicator
         }
 
         /// <summary>
-        /// Find a handlarConsolidations
+        /// Find the consolidations
         /// </summary>
         /// <returns></returns>
         public handlarConsolidations handlarConsolidations(Data.IDataSeries input, bool myBool, double myDouble, int myInt, string myString)
@@ -592,7 +634,7 @@ namespace NinjaTrader.MarketAnalyzer
     public partial class Column : ColumnBase
     {
         /// <summary>
-        /// Find a handlarConsolidations
+        /// Find the consolidations
         /// </summary>
         /// <returns></returns>
         [Gui.Design.WizardCondition("Indicator")]
@@ -602,7 +644,7 @@ namespace NinjaTrader.MarketAnalyzer
         }
 
         /// <summary>
-        /// Find a handlarConsolidations
+        /// Find the consolidations
         /// </summary>
         /// <returns></returns>
         public Indicator.handlarConsolidations handlarConsolidations(Data.IDataSeries input, bool myBool, double myDouble, int myInt, string myString)
@@ -618,7 +660,7 @@ namespace NinjaTrader.Strategy
     public partial class Strategy : StrategyBase
     {
         /// <summary>
-        /// Find a handlarConsolidations
+        /// Find the consolidations
         /// </summary>
         /// <returns></returns>
         [Gui.Design.WizardCondition("Indicator")]
@@ -628,7 +670,7 @@ namespace NinjaTrader.Strategy
         }
 
         /// <summary>
-        /// Find a handlarConsolidations
+        /// Find the consolidations
         /// </summary>
         /// <returns></returns>
         public Indicator.handlarConsolidations handlarConsolidations(Data.IDataSeries input, bool myBool, double myDouble, int myInt, string myString)
