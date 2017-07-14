@@ -250,7 +250,7 @@ namespace NinjaTrader.Indicator
 								//(getBarType(pattern.startBar+1) == "bullish")														
 								pattern.type == "short"
 								&& (priceToInt(Low[0]) >= priceToInt(pattern.startImpulseLow + (pattern.startImpulseSize/3)*TickSize))
-								&& (priceToInt(Low[0]) <= priceToInt(pattern.startImpulseHigh))
+								//&& (priceToInt(Low[0]) <= priceToInt(pattern.startImpulseHigh))
 							)
 							||
 							// лонг
