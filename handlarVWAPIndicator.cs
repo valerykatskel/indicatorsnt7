@@ -191,7 +191,7 @@ namespace NinjaTrader.Indicator {
 					// обнуляем накопленные данные для построения VWAP
 					cumVPvalue = 0;
 					cumVolume = 0;
-					if (Times[0][0].DayOfWeek == DayOfWeek.Friday) {
+					if (Times[0][0].DayOfWeek == DayOfWeek.Monday) {
 						// обнуляем недельные данные для построения недельного VWAP
 						cumVPvalueWeekly = 0;
 						cumVolumeWeekly = 0;
