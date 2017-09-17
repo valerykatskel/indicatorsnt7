@@ -11,6 +11,7 @@ using NinjaTrader.Gui.Chart;
 #endregion
 
 // This namespace holds all indicators and is required. Do not change it.
+// version 2.0.0
 namespace NinjaTrader.Indicator {
     /// <summary>
     /// It draws simple VWAP (dayly and weekly) by handlar.info 2017
