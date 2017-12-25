@@ -22,6 +22,7 @@ namespace NinjaTrader.Indicator
     public class handlarMinVolIndicator : Indicator
     {
 		#region VARIABLES
+		    private string version											= "1.0.3";
 		    private bool   playSound                                        = true;
 			private DataSeries iDayHigh; 
 			private DataSeries iDayLow; 
@@ -131,25 +132,6 @@ namespace NinjaTrader.Indicator
 			int counter = 0;
 			
 			if (vLevels.Count() >0) {
-				Values[0][0] = 0;
-				PlotColors[0][0] = Color.Transparent;
-				
-				Values[1][0] = 0;
-				PlotColors[1][0] = Color.Transparent;
-				
-				Values[2][0] = 0;
-				PlotColors[2][0] = Color.Transparent;
-				
-				Values[3][0] = 0;
-				PlotColors[3][0] = Color.Transparent;
-				
-				Values[4][0] = 0;
-				PlotColors[4][0] = Color.Transparent;
-				
-				Values[5][0] = 0;
-				PlotColors[5][0] = Color.Transparent;
-				
-
 				//Print("handlarMinVolIndicator ::" + Times[0][0]+"======");
 				foreach(KeyValuePair<double, myLevelType> kvp in vLevels.OrderByDescending(key => key.Key)) {	
 					if (counter > 5) return;
@@ -161,7 +143,7 @@ namespace NinjaTrader.Indicator
 									priceToInt(Opens[0][0]) < priceToInt(Closes[0][0])
 									&& (priceToInt(kvp.Key) < priceToInt(Opens[0][0]))
 							) {
-								PlotColors[counter][0] = Color.SkyBlue;
+								//PlotColors[counter][0] = PlotColors.;
 								Values[counter][0] = kvp.Key;
 								if (showVolumeValue){
 									DrawText(kvp.Key.ToString() + "_" + kvp.Value.volume.ToString() + Times[0][0], kvp.Value.volume.ToString(), -1, kvp.Key, ChartControl.AxisColor);
@@ -172,7 +154,7 @@ namespace NinjaTrader.Indicator
 									priceToInt(Opens[0][0]) > priceToInt(Closes[0][0])
 									&& (priceToInt(kvp.Key) > priceToInt(Opens[0][0]))
 							) {
-								PlotColors[counter][0] = Color.SkyBlue;
+								//PlotColors[counter][0] = Color.SkyBlue;
 								Values[counter][0] = kvp.Key;
 								if (showVolumeValue){
 									DrawText(kvp.Key.ToString() + "_" + kvp.Value.volume.ToString() + Times[0][0], kvp.Value.volume.ToString(), -1, kvp.Key, ChartControl.AxisColor);
@@ -182,7 +164,7 @@ namespace NinjaTrader.Indicator
 						} else {
 							if (priceToInt(kvp.Key) <= priceToInt(Highs[0][0]) && priceToInt(kvp.Key) >= priceToInt(Lows[0][0])) {
 								Values[counter][0] = kvp.Key;
-								PlotColors[counter][0] = Color.SkyBlue;
+								//PlotColors[counter][0] = Color.SkyBlue;
 								if (showVolumeValue){
 									DrawText(kvp.Key.ToString() + "_" + kvp.Value.volume.ToString() + Times[0][0], kvp.Value.volume.ToString(), -1, kvp.Key, ChartControl.AxisColor);
 								}
@@ -194,57 +176,44 @@ namespace NinjaTrader.Indicator
 				
 				if (showZones) {
 					// Если на свече есть минимальный объем
-					if (Values[0][0] > 0) {
-						// Красные зоны	
-						// если первый бар слева сформировал хай
-						if (
+
+					if (
 							isMinValueInHigh()	
-							&& (priceToInt(High[1]) == priceToInt(iDayHigh[1]))								// если предыдущий бар своим хаем сформировал хай дня
-							&& (priceToInt(iDayHigh[1]) == (priceToInt(iDayHigh[0])))
+							&& (
+								(
+									(priceToInt(High[1]) == priceToInt(CurrentDayOHL().CurrentHigh[1]))					// если предыдущий бар своим хаем сформировал хай дня
+									&& (priceToInt(CurrentDayOHL().CurrentHigh[1]) == (priceToInt(CurrentDayOHL().CurrentHigh[0])))
+								)
+								|| (
+									(priceToInt(High[2]) == priceToInt(CurrentDayOHL().CurrentHigh[2]))					// ИЛИ если второй слева бар своим хаем сформировал хай дня
+									&& (priceToInt(CurrentDayOHL().CurrentHigh[2]) == (priceToInt(CurrentDayOHL().CurrentHigh[0])))
+								)
+							)
 						) {
-							
-							DrawRectangle("mvShort-"+Times[0][1], false, 2, Highs[0][1] + TickSize, -1, Lows[0][0] - TickSize, Color.Red, Color.Red, 5);
-							if (playSound) {playSignalSound("short");}
-							return;
-						}
-						
-						// если второй бар слева сформировал хай
-						if (
-							isMinValueInHigh()	
-							&& (priceToInt(High[2]) == priceToInt(iDayHigh[2]))								// если второй слева бар своим хаем сформировал хай дня
-							&& (priceToInt(iDayHigh[2]) == (priceToInt(iDayHigh[0])))
-							
-						) {
-							// draw red zone
-							DrawRectangle("mvShort-"+Times[0][1], false, 3, Highs[0][2] + TickSize, -1, Math.Min(Lows[0][0],Math.Min(Lows[0][1],Lows[0][2])) - TickSize, Color.Red, Color.Red, 5);
-							if (playSound) {playSignalSound("short");}
-							return;
-						}
-							
-						// Зеленые зоны	
-						// если первый бар слева сформировал лой
-						if (
+						// draw red zone
+						//Print(Times[0][0]+" \ndayHighCur="+dayHighCur+" \ndayHighPrev="+dayHighPrev+" \ndayLowCur="+dayLowCur+" \ndayLowPrev="+dayLowPrev);
+						DrawRectangle("mvShort-"+Times[0][1], false, 2, Highs[0][1], -1, Lows[0][0], Color.Red, Color.Red, 5);
+						if (playSound) {playSignalSound("short");}
+						return;
+					}
+					
+					if (
 							isMinValueInLow()
-							&& (priceToInt(Low[1]) == priceToInt(iDayLow[1]))								// если предыдущий бар своим лоем сформировал лой дня
-							&& (priceToInt(iDayLow[1]) == (priceToInt(iDayLow[0])))
+							&& (
+								(
+									(priceToInt(Low[1]) == priceToInt(CurrentDayOHL().CurrentLow[1]))						// если предыдущий бар своим лоем сформировал лой дня
+									&& (priceToInt(CurrentDayOHL().CurrentLow[1]) == (priceToInt(CurrentDayOHL().CurrentLow[0])))
+								)
+								|| (
+									(priceToInt(Low[2]) == priceToInt(CurrentDayOHL().CurrentLow[2]))						// ИЛИ если второй слева бар своим лоем сформировал лой дня
+									&& (priceToInt(CurrentDayOHL().CurrentLow[2]) == (priceToInt(CurrentDayOHL().CurrentLow[0])))
+								)
+							)
 						) {
-							
-							DrawRectangle("mvLong-"+Times[0][1], false, 2, Lows[0][1] - TickSize, -1, Math.Max(Highs[0][0],Highs[0][1]) + TickSize, Color.Green, Color.Green, 9);
-							if (playSound) {playSignalSound("long");}
-							return;
-						};
-							
-						// если второй бар слева сформировал лой
-						if (
-							isMinValueInLow()
-							&& (priceToInt(Low[2]) == priceToInt(iDayLow[2]))								// если второй слева бар своим лоем сформировал лой дня
-							&& (priceToInt(iDayLow[2]) == (priceToInt(iDayLow[0])))
-						) {
-							
-							DrawRectangle("mvLong-"+Times[0][1], false,32, Lows[0][2] - TickSize, -1, Math.Max(Highs[0][0],Math.Max(Highs[0][1],Highs[0][2])) + TickSize, Color.Green, Color.Green, 9);
-							if (playSound) {playSignalSound("long");}
-							return;
-						};
+						// draw green zone
+						DrawRectangle("mvLong-"+Times[0][1], false, 2, Lows[0][1], -1, Math.Max(Highs[0][0],Highs[0][1]), Color.Green, Color.Green, 9);
+						if (playSound) {playSignalSound("long");}
+						return;
 					}	
 				}
 			}
